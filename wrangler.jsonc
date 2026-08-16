@@ -9,7 +9,9 @@
   "compatibility_date": "2025-04-01",
 
   // 普通配置(部署界面可改):上游隧道主机名、体积上限、令牌有效期。
-  // Access service token 的 ID 半公开(标识用);SECRET 半对放 .dev.vars.example。
+  // ⚠️ CF_ACCESS_CLIENT_ID/SECRET 必填(fail-closed):隧道主机名是公网入口,
+  // 无 Access 即无鉴权直达 dsh —— 缺失时网关拒绝配对与中转。SECRET 半对放
+  // .dev.vars.example,ID 半对在此。
   "vars": {
     "TUNNEL_HOST": "",
     "CF_ACCESS_CLIENT_ID": "",
