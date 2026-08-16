@@ -1,0 +1,54 @@
+# dsh-gateway-worker —— dsh 移动接入网关的 Cloudflare Workers 部署形态。
+# 协议与 Rust 版(dsh-mobile-gateway)同构:配对鉴权 + HTTP 流式/WS 中转,
+# 手机 App(singleman)零改动直连;上游从「SSH 反向隧道」换成 cloudflared。
+name = "dsh-gateway-worker"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+# Deploy Button 部署界面会让用户逐项填写下面 [vars] 的值。
+# JWT_SECRET / ADMIN_KEY 请在部署界面(或部署后 Settings → Variables)填入
+# 两个不同的强随机值:`openssl rand -hex 32`。
+[vars]
+# 设备令牌签名密钥(必填,32+ 随机字节 hex)。
+JWT_SECRET = ""
+# 管理面密钥(必填,Mac 侧 pair.mjs 凭它 claim;随机 32+ 字节)。
+ADMIN_KEY = ""
+# cloudflared 隧道的公网主机名(如 mac.example.com;多机时 claim 可按次覆盖)。
+TUNNEL_HOST = ""
+# 可选:Cloudflare Access service token(保护隧道主机名时才填)。
+CF_ACCESS_CLIENT_ID = ""
+CF_ACCESS_CLIENT_SECRET = ""
+# 单请求体积上限(字节)。CF 代理硬顶:Free/Pro 100MB,Business 200MB。
+# /healthz 会把它报给 App 做发送前预检提示。
+MAX_UPLOAD_BYTES = "104857600"
+# 设备令牌有效期(天)。
+TOKEN_TTL_DAYS = "30"
+
+[[durable_objects.bindings]]
+name = "REGISTRY"
+class_name = "Registry"
+
+# SQLite 后端的 DO 免费档即可用,且无需预建任何账号资源(D1 需要database_id,
+# 会打断一键部署)。
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Registry"]
+
+[observability]
+enabled = true
+
+# 测试专用(vitest-pool-workers 走 env.test;MAX_UPLOAD_BYTES 调小便于触发 413)。
+# durable_objects/migrations 是 non-inheritable key,test 环境需重复声明。
+[env.test.vars]
+JWT_SECRET = "test-jwt-secret-0123456789abcdef"
+ADMIN_KEY = "test-admin-key-0123456789abcdef"
+TUNNEL_HOST = "tunnel.invalid.example"
+MAX_UPLOAD_BYTES = "16"
+
+[[env.test.durable_objects.bindings]]
+name = "REGISTRY"
+class_name = "Registry"
+
+[[env.test.migrations]]
+tag = "v1"
+new_sqlite_classes = ["Registry"]
