@@ -71,15 +71,19 @@ config.yml 不用手写 —— 插件每次随 dsh web 启动按运行时端口�
   1. [Zero Trust](https://one.dash.cloudflare.com/) → Access → **Service Tokens → Create**(Secret 只显示一次);
   2. ID 填 Worker var `CF_ACCESS_CLIENT_ID`,SECRET 用 `secret put`/dashboard 填入;
   3. Access → **Applications → Add → Self-hosted**:域名 = 隧道主机名;策略 Action = **Service Auth**,Include = 该 token。
-- CLI(🔑**TOKEN**,权限要齐:**Access: Apps and Policies Edit + Access: Service Tokens Read**(建策略要读 token 清单拿 UUID;只给 Edit 不够,实测会卡在列表)):
+- CLI(🔑**TOKEN**,权限要齐:**Access: Apps and Policies Edit + Access: Service Tokens Read**。
+  实测坑:①无权限端点返回 7003「Could not route」(路由遮蔽,别误判路径错);
+  ②type 必须写 `self_hosted`(下划线),③Service Auth 策略的 decision 必须写
+  `non_identity`(非 service_auth),④client_id 前缀**不是** token UUID(无连字符),
+  UUID 只能从 service tokens 清单读):
   ```bash
-  # 拿 service token UUID
+  # 1) 拿 service token 真实 UUID(client_id 是 <hex>.access 形态,另有 id 字段)
   curl -s "$API/accounts/$ACC/cfd_access_service_tokens" -H "Authorization: Bearer $CFUT"
-  # 建应用(策略内联)
+  # 2) 建应用(策略内联)
   curl -s -X POST "$API/accounts/$ACC/access/apps" -H "Authorization: Bearer $CFUT" \
-    -H 'content-type: application/json' -d '{"name":"dsh-gateway tunnel","type":"selfhosted",
+    -H 'content-type: application/json' -d '{"name":"dsh-gateway tunnel","type":"self_hosted",
       "domain":"<隧道主机名>","policies":[{"name":"allow-gateway-worker","precedence":1,
-      "decision":"service_auth","include":[{"service_token":{"id":"<UUID>"}}]}]}'
+      "decision":"non_identity","include":[{"service_token":{"id":"<UUID>"}}]}]}'
   ```
 - 验证:`curl -sI https://<隧道主机名>/` → **302**(被 Access 拦 = 门装好了);
   `curl https://<网关域名>/healthz` → `"access_protected":true`。
