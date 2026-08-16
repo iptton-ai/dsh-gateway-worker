@@ -39,15 +39,17 @@ DeepSeek Harness 移动接入网关的 **Cloudflare Workers 部署形态**:没�
 
 1. 点上面的 **Deploy to Cloudflare** 按钮(CF 会把本仓库克隆进你的账号并接好 CI,
    push 即自动重部署);
-2. 部署界面填变量(也可部署后在 Settings → Variables 补填):
+2. 部署界面填变量(密钥项来自 `.dev.vars.example`,配置项来自 `wrangler.jsonc`;
+   也可部署后在 Settings 补填):
 
-   | 变量 | 说明 |
-   |---|---|
-   | `JWT_SECRET` | 令牌签名密钥,`openssl rand -hex 32`,必填 |
-   | `ADMIN_KEY` | 管理密钥(Mac 侧配对凭它),`openssl rand -hex 32`,必填 |
-   | `TUNNEL_HOST` | cloudflared 隧道公网主机名,如 `mac.example.com`,必填 |
-   | `CF_ACCESS_CLIENT_ID/SECRET` | 可选;用 Cloudflare Access 保护隧道主机名时的一对 service token |
-   | `MAX_UPLOAD_BYTES` | 单请求体积上限,默认 100MiB(见下方「限制」) |
+   | 变量 | 类型 | 说明 |
+   |---|---|---|
+   | `JWT_SECRET` | secret | 令牌签名密钥,`openssl rand -hex 32`,必填 |
+   | `ADMIN_KEY` | secret | 管理密钥(Mac 侧配对凭它),`openssl rand -hex 32`,必填 |
+   | `CF_ACCESS_CLIENT_SECRET` | secret | 可选;Access service token 的 SECRET 半对 |
+   | `TUNNEL_HOST` | var | cloudflared 隧道公网主机名,如 `mac.example.com`,必填 |
+   | `CF_ACCESS_CLIENT_ID` | var | 可选;Access service token 的 ID 半对 |
+   | `MAX_UPLOAD_BYTES` | var | 单请求体积上限,默认 100MiB(见下方「限制」) |
 
 3. 绑自定义域名:Dashboard → Worker → Settings → Domains & Routes → 添加
    `gw.你的域名`(workers.dev 在部分网络不可达,自定义域名必做);
@@ -111,8 +113,9 @@ node scripts/revoke.mjs <jti>     # 吊销
 
 ```bash
 pnpm install        # 或 npm install
-pnpm test           # 17 项集成测试(vitest-pool-workers,DO 真实运行)
+pnpm test           # 17 项集成测试(vitest-pool-workers,DO 真实运行;配置见 wrangler.test.jsonc)
 pnpm typecheck
+cp .dev.vars.example .dev.vars && vi .dev.vars   # 本地开发密钥
 npx wrangler dev    # 本地起 Worker(:8787)
 ```
 

@@ -1,7 +1,6 @@
 {
   "name": "dsh-gateway-worker",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "dsh 移动接入网关的 Cloudflare Workers 部署形态(配对鉴权 + HTTP/WS 中转,协议与 Rust 版 dsh-mobile-gateway 同构)",
   "scripts": {
